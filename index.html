@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>휴양소 어디야 - 내부 배포</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f4f6fa;
+    --card: #ffffff;
+    --text: #1a2a3a;
+    --muted: #5b6b7a;
+    --primary: #2a5db0;
+    --border: #e1e6ee;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #11161d;
+      --card: #1b222c;
+      --text: #eef2f7;
+      --muted: #9aa7b4;
+      --primary: #5b8fe0;
+      --border: #2a3440;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .card {
+    width: 100%;
+    max-width: 380px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 24px;
+  }
+  h1 {
+    font-size: 18px;
+    margin: 0 0 6px;
+  }
+  p.sub {
+    margin: 0 0 20px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  input[type="password"] {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 15px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text);
+  }
+  button {
+    width: 100%;
+    margin-top: 12px;
+    padding: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    background: var(--primary);
+    color: #fff;
+    cursor: pointer;
+  }
+  button:active { opacity: 0.85; }
+  .error {
+    margin-top: 10px;
+    font-size: 13px;
+    color: #c23b22;
+    min-height: 16px;
+  }
+  .links { display: none; }
+  .links.visible { display: block; }
+  .link-btn {
+    display: block;
+    width: 100%;
+    margin-top: 12px;
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: center;
+  }
+  .link-btn .desc {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--muted);
+  }
+  .form { display: block; }
+  .form.hidden { display: none; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>휴양소 어디야 - 내부 배포</h1>
+    <p class="sub">사내 인원에게만 공유되는 설치 페이지입니다.</p>
+
+    <div class="form" id="form">
+      <input type="password" id="pw" placeholder="접근 암호" autocomplete="off" />
+      <button id="submit">확인</button>
+      <div class="error" id="error"></div>
+    </div>
+
+    <div class="links" id="links">
+      <a class="link-btn" id="ios-link" href="#">
+        iOS 설치
+        <span class="desc">최초 설치 후 설정 -&gt; 일반 -&gt; VPN 및 기기 관리에서 프로파일 신뢰 필요</span>
+      </a>
+      <a class="link-btn" id="android-link" href="#">
+        Android 설치 (APK 다운로드)
+        <span class="desc">다운로드 후 "출처를 알 수 없는 앱" 설치 허용 필요</span>
+      </a>
+    </div>
+  </div>
+
+<script>
+  var GATE_HASH = "ad205a44f9aed3dac387a95fcdb90d9e29aa6b99e8720736ff2dad82745fe59a";
+  var MANIFEST_URL = "https://mwaiver.github.io/hmcezwel/manifest.plist";
+  var APK_URL = "https://github.com/mwaiver/hmcezwel/releases/download/v1.0.0/app-release.apk";
+
+  function sha256Hex(text) {
+    return crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)).then(function (buf) {
+      return Array.prototype.map.call(new Uint8Array(buf), function (b) {
+        return b.toString(16).padStart(2, "0");
+      }).join("");
+    });
+  }
+
+  function unlock() {
+    document.getElementById("form").classList.add("hidden");
+    var links = document.getElementById("links");
+    links.classList.add("visible");
+    document.getElementById("ios-link").href = "itms-services://?action=download-manifest&url=" + encodeURIComponent(MANIFEST_URL);
+    document.getElementById("android-link").href = APK_URL;
+    try { sessionStorage.setItem("gate_ok", "1"); } catch (e) {}
+  }
+
+  document.getElementById("submit").addEventListener("click", function () {
+    var pw = document.getElementById("pw").value;
+    sha256Hex(pw).then(function (hash) {
+      if (hash === GATE_HASH) {
+        unlock();
+      } else {
+        document.getElementById("error").textContent = "암호가 올바르지 않습니다.";
+      }
+    });
+  });
+
+  document.getElementById("pw").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") document.getElementById("submit").click();
+  });
+
+  try {
+    if (sessionStorage.getItem("gate_ok") === "1") unlock();
+  } catch (e) {}
+</script>
+</body>
+</html>
